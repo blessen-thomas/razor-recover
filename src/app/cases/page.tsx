@@ -8,6 +8,8 @@ export default function CasesPage() {
   const [cases, setCases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [seeding, setSeeding] = useState<string | null>(null);
+
   const fetchCases = async () => {
     try {
       setLoading(true);
@@ -18,6 +20,22 @@ export default function CasesPage() {
       console.error("Failed to fetch cases:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSeed = async (scenario: "happy" | "unsafe" | "reconcile") => {
+    try {
+      setSeeding(scenario);
+      await fetch("/api/seed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scenario }),
+      });
+      await fetchCases();
+    } catch (err) {
+      console.error("Seed error:", err);
+    } finally {
+      setSeeding(null);
     }
   };
 
@@ -42,17 +60,49 @@ export default function CasesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-100">Autonomous Payment Recovery Cases</h2>
           <p className="text-sm text-slate-400">Deterministic safety engine status & recovery audit history</p>
         </div>
-        <button
-          onClick={fetchCases}
-          className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-3.5 py-2 rounded-lg text-sm font-medium transition"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Refresh Cases
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={fetchCases}
+            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-3.5 py-2 rounded-lg text-sm font-medium transition"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Refresh Cases
+          </button>
+        </div>
+      </div>
+
+      {/* Demo Scenario Seeders Panel */}
+      <div className="bg-slate-800/90 border border-slate-700 p-4 rounded-xl space-y-3">
+        <div className="text-xs font-bold uppercase tracking-wider text-slate-400">Demo Scenario Quick Launchers</div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <button
+            onClick={() => handleSeed("happy")}
+            disabled={seeding !== null}
+            className="flex items-center justify-center gap-2 bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-700/60 text-emerald-300 px-3.5 py-2.5 rounded-lg text-xs font-semibold transition disabled:opacity-50"
+          >
+            {seeding === "happy" ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : "🚀"} Scenario 1: Autonomous Recovery
+          </button>
+
+          <button
+            onClick={() => handleSeed("unsafe")}
+            disabled={seeding !== null}
+            className="flex items-center justify-center gap-2 bg-rose-950/60 hover:bg-rose-900/60 border border-rose-700/60 text-rose-300 px-3.5 py-2.5 rounded-lg text-xs font-semibold transition disabled:opacity-50"
+          >
+            {seeding === "unsafe" ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : "🛑"} Scenario 2: Safety Halt (Contradiction)
+          </button>
+
+          <button
+            onClick={() => handleSeed("reconcile")}
+            disabled={seeding !== null}
+            className="flex items-center justify-center gap-2 bg-blue-950/60 hover:bg-blue-900/60 border border-blue-700/60 text-blue-300 px-3.5 py-2.5 rounded-lg text-xs font-semibold transition disabled:opacity-50"
+          >
+            {seeding === "reconcile" ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : "🔄"} Scenario 3: Stale Reconciliation
+          </button>
+        </div>
       </div>
 
       <div className="bg-slate-800/80 border border-slate-700/80 rounded-xl overflow-hidden shadow-xl">

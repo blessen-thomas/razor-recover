@@ -76,6 +76,26 @@ export default function CaseDetailPage() {
         </button>
       </div>
 
+      {/* Reconciliation Alert Banner if Awaiting Reconciliation */}
+      {c.safety_state === "AWAITING_RECONCILIATION" && (
+        <div className="bg-blue-950/80 border border-blue-700/80 p-4 rounded-xl flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <AlertTriangle className="w-5 h-5 text-blue-400" />
+            <div>
+              <div className="text-sm font-bold text-blue-200">Autonomous Recovery Paused — Awaiting Reconciliation</div>
+              <div className="text-xs text-blue-300">Stale event payload detected. Click "Trigger Reconciliation API" to fetch authoritative state from Razorpay API.</div>
+            </div>
+          </div>
+          <button
+            onClick={handleReconcile}
+            disabled={reconciling}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold transition disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${reconciling ? "animate-spin" : ""}`} /> Reconcile Now
+          </button>
+        </div>
+      )}
+
       {/* Header Banner */}
       <div className="bg-slate-800 border border-slate-700 p-6 rounded-xl space-y-4">
         <div className="flex items-start justify-between">
@@ -83,7 +103,9 @@ export default function CaseDetailPage() {
             <div className="flex items-center space-x-3">
               <h2 className="text-2xl font-bold font-mono text-white">{c.razorpay_payment_id}</h2>
               <span className={`px-2.5 py-1 rounded text-xs font-bold ${
-                c.safety_state === "ACTIVE" ? "bg-emerald-950 text-emerald-400 border border-emerald-800" : "bg-rose-950 text-rose-400 border border-rose-800"
+                c.safety_state === "ACTIVE" ? "bg-emerald-950 text-emerald-400 border border-emerald-800" :
+                c.safety_state === "AWAITING_RECONCILIATION" ? "bg-blue-950 text-blue-400 border border-blue-800" :
+                "bg-rose-950 text-rose-400 border border-rose-800"
               }`}>
                 SAFETY STATE: {c.safety_state}
               </span>
@@ -99,14 +121,22 @@ export default function CaseDetailPage() {
         {/* 7-Step Pipeline Progress Bar */}
         <div className="grid grid-cols-7 gap-2 pt-4 border-t border-slate-700">
           {PIPELINE_STEPS.map((step) => {
-            const hasLog = auditTrail?.some((a: any) => a.step_number === step.number);
+            const stepLog = auditTrail?.find((a: any) => a.step_number === step.number);
+            const hasLog = Boolean(stepLog);
+            let style = "bg-slate-900/40 border-slate-800 text-slate-600";
+
+            if (hasLog) {
+              if (c.safety_state === "ESCALATED" || c.safety_state === "BLOCKED") {
+                style = "bg-rose-950/40 border-rose-500/50 text-rose-300";
+              } else if (step.number === 6 && c.integrity_state === "TRUSTED") {
+                style = "bg-emerald-950/40 border-emerald-500/50 text-emerald-300";
+              } else {
+                style = "bg-slate-900 border-blue-500/50 text-blue-400";
+              }
+            }
+
             return (
-              <div
-                key={step.number}
-                className={`p-3 rounded-lg border text-center text-xs font-semibold ${
-                  hasLog ? "bg-slate-900 border-blue-500/50 text-blue-400" : "bg-slate-900/40 border-slate-800 text-slate-600"
-                }`}
-              >
+              <div key={step.number} className={`p-3 rounded-lg border text-center text-xs font-semibold ${style}`}>
                 <div className="text-[10px] text-slate-500 uppercase">Step {step.number}</div>
                 <div className="truncate mt-0.5">{step.name}</div>
               </div>

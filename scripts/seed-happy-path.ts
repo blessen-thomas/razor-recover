@@ -8,6 +8,22 @@ import { logAuditEntry } from "../src/lib/recovery/audit-logger";
 async function runHappyPathSeed() {
   console.log("🚀 Seeding Demo Scenario 1: Happy Path Autonomous Payment Recovery...");
 
+  try {
+    const res = await fetch("http://localhost:3000/api/seed", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ scenario: "happy" }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      console.log(`✅ Happy Path Seeded via Next.js API! Case ID: ${data.caseId}`);
+      console.log(`Inspect live audit at http://localhost:3000/cases/${data.caseId}`);
+      return;
+    }
+  } catch (_e) {
+    // Next.js server not running, fallback to direct in-memory execution
+  }
+
   const paymentId = `pay_happy_${Math.floor(1000 + Math.random() * 9000)}`;
 
   const webhookPayload = {
@@ -38,6 +54,7 @@ async function runHappyPathSeed() {
     customer_email: "customer_happy@example.com",
     customer_phone: "+919876543210",
     error_code: "BAD_REQUEST_ERROR",
+    error_description: "Payment failed due to temporary bank network issue.",
     current_status: "DETECTED",
     safety_state: "ACTIVE",
     integrity_state: integrity.integrityState,

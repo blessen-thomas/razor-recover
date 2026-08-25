@@ -7,6 +7,22 @@ import { logAuditEntry } from "../src/lib/recovery/audit-logger";
 async function runUnsafePathSeed() {
   console.log("🚀 Seeding Demo Scenario 2: Unsafe Contradictory Event Stream (Safety Halt)...");
 
+  try {
+    const res = await fetch("http://localhost:3000/api/seed", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ scenario: "unsafe" }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      console.log(`🛑 Unsafe Path Seeded via Next.js API! Case ID: ${data.caseId}`);
+      console.log(`Inspect live audit at http://localhost:3000/cases/${data.caseId}`);
+      return;
+    }
+  } catch (_e) {
+    // Next.js server not running, fallback to direct in-memory execution
+  }
+
   const paymentId = `pay_unsafe_${Math.floor(1000 + Math.random() * 9000)}`;
 
   const paymentCase: PaymentCaseRecord = {
