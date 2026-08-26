@@ -1,14 +1,15 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { ShieldCheck, AlertOctagon, RefreshCw, Clock, ArrowRight } from "lucide-react";
+import { RefreshCw, ArrowRight, ChevronDown, Check, AlertCircle } from "lucide-react";
 
 export default function CasesPage() {
   const [cases, setCases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [seeding, setSeeding] = useState<string | null>(null);
+  const [testMenuOpen, setTestMenuOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const fetchCases = async () => {
     try {
@@ -26,6 +27,7 @@ export default function CasesPage() {
   const handleSeed = async (scenario: "happy" | "unsafe" | "reconcile") => {
     try {
       setSeeding(scenario);
+      setTestMenuOpen(false);
       await fetch("/api/seed", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -43,132 +45,229 @@ export default function CasesPage() {
     fetchCases();
   }, []);
 
-  const getSafetyStateBadge = (state: string) => {
-    switch (state) {
-      case "ACTIVE":
-        return <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1"><ShieldCheck className="w-3.5 h-3.5" /> ACTIVE</span>;
-      case "BLOCKED":
-        return <span className="bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1"><AlertOctagon className="w-3.5 h-3.5" /> BLOCKED</span>;
-      case "ESCALATED":
-        return <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1"><AlertOctagon className="w-3.5 h-3.5" /> ESCALATED</span>;
-      case "AWAITING_RECONCILIATION":
-        return <span className="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> AWAITING RECONCILIATION</span>;
-      default:
-        return <span className="bg-slate-700 text-slate-300 px-2.5 py-1 rounded-md text-xs font-semibold">{state}</span>;
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setTestMenuOpen(false);
+      }
     }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Compute operational summary metrics from actual cases
+  const totalCases = cases.length;
+  const revenueAtRisk = cases.reduce((sum, c) => sum + (c.amount || 0), 0);
+  const recoveredRevenue = cases
+    .filter((c) => c.current_status === "RECOVERY_INITIATED" || c.current_status === "RECOVERED")
+    .reduce((sum, c) => sum + (c.amount || 0), 0);
+  const casesNeedingAttention = cases.filter(
+    (c) => c.safety_state === "ESCALATED" || c.safety_state === "BLOCKED" || c.safety_state === "AWAITING_RECONCILIATION"
+  ).length;
+  const recoveryRate = totalCases > 0
+    ? Math.round((cases.filter((c) => c.current_status === "RECOVERY_INITIATED" || c.current_status === "RECOVERED").length / totalCases) * 100)
+    : 0;
+
+  const formatCurrency = (val: number) => {
+    return `₹${val.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-5">
+      {/* Top Header Controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-800/80">
         <div>
-          <h2 className="text-2xl font-bold text-slate-100">Autonomous Payment Recovery Cases</h2>
-          <p className="text-sm text-slate-400">Deterministic safety engine status & recovery audit history</p>
+          <h1 className="text-xl font-bold text-slate-100 tracking-tight">Recovery Cases & Safety Audit</h1>
+          <p className="text-xs text-slate-400 font-mono mt-0.5">
+            Real-time deterministic safety engine evaluation and autonomous payment recovery audit trail
+          </p>
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="flex items-center space-x-2.5">
+          {/* Test / Demo Mode Compact Launcher */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setTestMenuOpen(!testMenuOpen)}
+              disabled={seeding !== null}
+              className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 px-3 py-1.5 rounded text-xs font-mono transition disabled:opacity-50"
+            >
+              {seeding ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-400" />
+              ) : (
+                <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+              )}
+              <span>Test Scenarios</span>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-0.5" />
+            </button>
+
+            {testMenuOpen && (
+              <div className="absolute right-0 mt-1.5 w-64 bg-slate-900 border border-slate-700 rounded shadow-2xl z-50 py-1 text-xs">
+                <div className="px-3 py-1.5 text-[10px] font-mono text-slate-500 uppercase tracking-wider border-b border-slate-800">
+                  Select Demo Scenario
+                </div>
+                <button
+                  onClick={() => handleSeed("happy")}
+                  className="w-full text-left px-3 py-2 hover:bg-slate-800 text-slate-200 transition flex items-center justify-between font-mono"
+                >
+                  <div>
+                    <div className="font-semibold text-emerald-400">1. Autonomous Recovery</div>
+                    <div className="text-[11px] text-slate-400 font-sans">Valid failed payload & recovery link</div>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => handleSeed("unsafe")}
+                  className="w-full text-left px-3 py-2 hover:bg-slate-800 text-slate-200 transition flex items-center justify-between border-t border-slate-800/60 font-mono"
+                >
+                  <div>
+                    <div className="font-semibold text-rose-400">2. Safety Halt (Contradiction)</div>
+                    <div className="text-[11px] text-slate-400 font-sans">Failed event after captured state</div>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => handleSeed("reconcile")}
+                  className="w-full text-left px-3 py-2 hover:bg-slate-800 text-slate-200 transition flex items-center justify-between border-t border-slate-800/60 font-mono"
+                >
+                  <div>
+                    <div className="font-semibold text-blue-400">3. Stale Reconciliation</div>
+                    <div className="text-[11px] text-slate-400 font-sans">Stale webhook payload & API sync</div>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
+
           <button
             onClick={fetchCases}
-            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-3.5 py-2 rounded-lg text-sm font-medium transition"
+            className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 px-3 py-1.5 rounded text-xs font-mono transition"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Refresh Cases
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+            <span>Refresh</span>
           </button>
         </div>
       </div>
 
-      {/* Demo Scenario Seeders Panel */}
-      <div className="bg-slate-800/90 border border-slate-700 p-4 rounded-xl space-y-3">
-        <div className="text-xs font-bold uppercase tracking-wider text-slate-400">Demo Scenario Quick Launchers</div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <button
-            onClick={() => handleSeed("happy")}
-            disabled={seeding !== null}
-            className="flex items-center justify-center gap-2 bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-700/60 text-emerald-300 px-3.5 py-2.5 rounded-lg text-xs font-semibold transition disabled:opacity-50"
-          >
-            {seeding === "happy" ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : "🚀"} Scenario 1: Autonomous Recovery
-          </button>
+      {/* Operational Summary Metrics Panel */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded space-y-1">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400">Revenue at Risk</div>
+          <div className="text-xl font-bold font-mono text-slate-100">{formatCurrency(revenueAtRisk)}</div>
+          <div className="text-[10px] text-slate-500 font-mono">{totalCases} total recovery case(s)</div>
+        </div>
 
-          <button
-            onClick={() => handleSeed("unsafe")}
-            disabled={seeding !== null}
-            className="flex items-center justify-center gap-2 bg-rose-950/60 hover:bg-rose-900/60 border border-rose-700/60 text-rose-300 px-3.5 py-2.5 rounded-lg text-xs font-semibold transition disabled:opacity-50"
-          >
-            {seeding === "unsafe" ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : "🛑"} Scenario 2: Safety Halt (Contradiction)
-          </button>
+        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded space-y-1">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400">Recovered Revenue</div>
+          <div className="text-xl font-bold font-mono text-emerald-400">{formatCurrency(recoveredRevenue)}</div>
+          <div className="text-[10px] text-slate-500 font-mono">Via Razorpay Payment Links</div>
+        </div>
 
-          <button
-            onClick={() => handleSeed("reconcile")}
-            disabled={seeding !== null}
-            className="flex items-center justify-center gap-2 bg-blue-950/60 hover:bg-blue-900/60 border border-blue-700/60 text-blue-300 px-3.5 py-2.5 rounded-lg text-xs font-semibold transition disabled:opacity-50"
-          >
-            {seeding === "reconcile" ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : "🔄"} Scenario 3: Stale Reconciliation
-          </button>
+        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded space-y-1">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400">Attention Required</div>
+          <div className={`text-xl font-bold font-mono ${casesNeedingAttention > 0 ? "text-amber-400" : "text-slate-300"}`}>
+            {casesNeedingAttention}
+          </div>
+          <div className="text-[10px] text-slate-500 font-mono">Escalated or awaiting reconcile</div>
+        </div>
+
+        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded space-y-1">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400">Autonomous Recovery Rate</div>
+          <div className="text-xl font-bold font-mono text-slate-100">{recoveryRate}%</div>
+          <div className="text-[10px] text-slate-500 font-mono">Policy-approved recovery execution</div>
         </div>
       </div>
 
-      <div className="bg-slate-800/80 border border-slate-700/80 rounded-xl overflow-hidden shadow-xl">
+      {/* Primary Operations Cases Table */}
+      <div className="bg-slate-900/80 border border-slate-800 rounded overflow-hidden">
+        <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+          <div className="text-xs font-mono uppercase tracking-wider text-slate-300 font-semibold">
+            Active Recovery Cases
+          </div>
+          <div className="text-xs font-mono text-slate-500">
+            Showing {cases.length} records
+          </div>
+        </div>
+
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-300">
-            <thead className="bg-slate-900/60 text-slate-400 uppercase text-xs font-semibold border-b border-slate-700/80">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-950/80 text-slate-400 uppercase font-mono text-[11px] border-b border-slate-800">
               <tr>
-                <th className="px-6 py-4">Case / Payment ID</th>
-                <th className="px-6 py-4">Amount</th>
-                <th className="px-6 py-4">Integrity State</th>
-                <th className="px-6 py-4">Safety State</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4">Retries</th>
-                <th className="px-6 py-4 text-right">Audit Trail</th>
+                <th className="px-4 py-3 font-semibold">Payment / Case ID</th>
+                <th className="px-4 py-3 font-semibold">Amount</th>
+                <th className="px-4 py-3 font-semibold">Integrity State</th>
+                <th className="px-4 py-3 font-semibold">Safety Engine State</th>
+                <th className="px-4 py-3 font-semibold">Status</th>
+                <th className="px-4 py-3 font-semibold">Retries</th>
+                <th className="px-4 py-3 font-semibold text-right">Audit Trail</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-700/50">
+            <tbody className="divide-y divide-slate-800/60 font-mono">
               {cases.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-slate-500">
-                    No active recovery cases. Use CLI seeders or trigger webhooks to test.
+                  <td colSpan={7} className="text-center py-12 text-slate-500 font-mono text-xs">
+                    No payment recovery cases registered. Select "Test Scenarios" above or send webhooks.
                   </td>
                 </tr>
               ) : (
-                cases.map((c) => (
-                  <tr key={c.id} className="hover:bg-slate-700/30 transition">
-                    <td className="px-6 py-4 font-mono font-medium text-slate-200">
-                      {c.razorpay_payment_id}
-                    </td>
-                    <td className="px-6 py-4 font-semibold text-slate-100">
-                      {c.currency || "INR"} {(c.amount ?? 0).toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4 font-mono text-xs">
-                      <span className={`px-2 py-1 rounded font-semibold ${
-                        c.integrity_state === "TRUSTED" ? "bg-emerald-950 text-emerald-400 border border-emerald-800" :
-                        c.integrity_state === "STALE" ? "bg-amber-950 text-amber-400 border border-amber-800" :
-                        "bg-rose-950 text-rose-400 border border-rose-800"
-                      }`}>
-                        {c.integrity_state}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      {getSafetyStateBadge(c.safety_state)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2 py-0.5 rounded text-[11px] font-semibold uppercase tracking-wider ${
-                        c.current_status === "RECOVERED" || c.current_status === "RECOVERY_INITIATED" ? "bg-emerald-950/60 text-emerald-300 border border-emerald-800/60" :
-                        c.current_status === "ESCALATED" || c.current_status === "FAILED" ? "bg-rose-950/60 text-rose-300 border border-rose-800/60" :
-                        "bg-slate-800 text-slate-300 border border-slate-700"
-                      }`}>
-                        {c.current_status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 font-mono text-xs text-slate-400">
-                      {c.retry_count} / 2
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <Link
-                        href={`/cases/${c.id}`}
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 px-3 py-1.5 rounded-md transition"
-                      >
-                        Inspect Audit <ArrowRight className="w-3.5 h-3.5" />
-                      </Link>
-                    </td>
-                  </tr>
-                ))
+                cases.map((c) => {
+                  return (
+                    <tr key={c.id} className="hover:bg-slate-800/40 transition">
+                      <td className="px-4 py-3.5 font-medium text-slate-200">
+                        {c.razorpay_payment_id}
+                      </td>
+                      <td className="px-4 py-3.5 font-semibold text-slate-100">
+                        {c.currency || "INR"} {(c.amount ?? 0).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <span className={`inline-block font-semibold ${
+                          c.integrity_state === "TRUSTED" ? "text-emerald-400" :
+                          c.integrity_state === "STALE" ? "text-amber-400" :
+                          "text-rose-400"
+                        }`}>
+                          {c.integrity_state}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        {c.safety_state === "ACTIVE" && (
+                          <span className="text-emerald-400 font-semibold flex items-center gap-1.5">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span> ACTIVE
+                          </span>
+                        )}
+                        {c.safety_state === "ESCALATED" && (
+                          <span className="text-rose-400 font-semibold flex items-center gap-1.5">
+                            <span className="h-1.5 w-1.5 rounded-full bg-rose-400"></span> ESCALATED
+                          </span>
+                        )}
+                        {c.safety_state === "BLOCKED" && (
+                          <span className="text-rose-400 font-semibold flex items-center gap-1.5">
+                            <span className="h-1.5 w-1.5 rounded-full bg-rose-400"></span> BLOCKED
+                          </span>
+                        )}
+                        {c.safety_state === "AWAITING_RECONCILIATION" && (
+                          <span className="text-blue-400 font-semibold flex items-center gap-1.5">
+                            <span className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse"></span> AWAITING RECONCILIATION
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <span className="text-slate-300 font-semibold">
+                          {c.current_status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 text-slate-400">
+                        {c.retry_count} / 2
+                      </td>
+                      <td className="px-4 py-3.5 text-right">
+                        <Link
+                          href={`/cases/${c.id}`}
+                          className="inline-flex items-center gap-1 text-xs font-mono text-blue-400 hover:text-blue-300 hover:underline transition"
+                        >
+                          Inspect Audit <ArrowRight className="w-3 h-3" />
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
