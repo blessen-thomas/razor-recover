@@ -93,12 +93,24 @@ export default function CasesPage() {
 
   const getDecisionText = (c: any) => {
     if (c.safety_state === "AWAITING_RECONCILIATION" || c.integrity_state === "STALE") {
-      return <span className="text-blue-700 font-semibold">Reconcile</span>;
+      return (
+        <span className="text-blue-700 font-semibold bg-blue-50 px-2 py-0.5 rounded-sm border border-blue-200 text-xs">
+          Reconcile
+        </span>
+      );
     }
     if (c.safety_state === "ESCALATED" || c.safety_state === "BLOCKED" || c.integrity_state === "CONTRADICTORY") {
-      return <span className="text-rose-700 font-semibold">Stop</span>;
+      return (
+        <span className="text-rose-700 font-semibold bg-rose-50 px-2 py-0.5 rounded-sm border border-rose-200 text-xs">
+          Stop
+        </span>
+      );
     }
-    return <span className="text-emerald-700 font-semibold">Recover</span>;
+    return (
+      <span className="text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-sm border border-emerald-200 text-xs">
+        Recover
+      </span>
+    );
   };
 
   const getStatusText = (c: any) => {
@@ -127,8 +139,8 @@ export default function CasesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-200">
         <div>
           <h1 className="text-xl font-bold text-slate-900 tracking-tight">Payment Recovery Operations</h1>
-          <p className="text-xs text-slate-500 font-mono mt-0.5">
-            Real-time deterministic safety engine evaluation and autonomous payment recovery audit trail
+          <p className="text-xs text-slate-500 font-sans mt-0.5">
+            Automatically recover safe payment failures while preventing risky retries.
           </p>
         </div>
 
@@ -199,29 +211,29 @@ export default function CasesPage() {
 
       {/* Operational Summary Metrics Panel */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-white border border-slate-200 p-4 rounded-sm space-y-1 shadow-sm">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-slate-500">Revenue at Risk</div>
-          <div className="text-xl font-bold font-mono text-slate-900">{formatCurrency(revenueAtRisk)}</div>
+        <div className="bg-white border-l-2 border-l-slate-900 border-t border-r border-b border-slate-200 p-4 rounded-sm space-y-1 shadow-sm">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-slate-500 font-semibold">Revenue at Risk</div>
+          <div className="text-2xl font-bold font-mono text-slate-900">{formatCurrency(revenueAtRisk)}</div>
           <div className="text-[11px] text-slate-500 font-sans">Failed payments currently requiring recovery or investigation.</div>
         </div>
 
-        <div className="bg-white border border-slate-200 p-4 rounded-sm space-y-1 shadow-sm">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-slate-500">Recovery in Progress</div>
-          <div className="text-xl font-bold font-mono text-emerald-700">{formatCurrency(recoveryInProgress)}</div>
+        <div className="bg-white border-l-2 border-l-emerald-600 border-t border-r border-b border-slate-200 p-4 rounded-sm space-y-1 shadow-sm">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-slate-500 font-semibold">Recovery in Progress</div>
+          <div className="text-2xl font-bold font-mono text-emerald-700">{formatCurrency(recoveryInProgress)}</div>
           <div className="text-[11px] text-slate-500 font-sans">Payments for which autonomous recovery action started.</div>
         </div>
 
-        <div className="bg-white border border-slate-200 p-4 rounded-sm space-y-1 shadow-sm">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-slate-500">Attention Required</div>
-          <div className={`text-xl font-bold font-mono ${casesNeedingAttention > 0 ? "text-amber-700" : "text-slate-800"}`}>
+        <div className="bg-white border-l-2 border-l-amber-600 border-t border-r border-b border-slate-200 p-4 rounded-sm space-y-1 shadow-sm">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-slate-500 font-semibold">Attention Required</div>
+          <div className={`text-2xl font-bold font-mono ${casesNeedingAttention > 0 ? "text-amber-700" : "text-slate-800"}`}>
             {casesNeedingAttention}
           </div>
           <div className="text-[11px] text-slate-500 font-sans">Cases blocked, escalated, or waiting for reconciliation.</div>
         </div>
 
-        <div className="bg-white border border-slate-200 p-4 rounded-sm space-y-1 shadow-sm">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-slate-500">Autonomous Action Rate</div>
-          <div className="text-xl font-bold font-mono text-slate-900">{autonomousActionRate}%</div>
+        <div className="bg-white border-l-2 border-l-slate-400 border-t border-r border-b border-slate-200 p-4 rounded-sm space-y-1 shadow-sm">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-slate-500 font-semibold">Autonomous Action Rate</div>
+          <div className="text-2xl font-bold font-mono text-slate-800">{autonomousActionRate}%</div>
           <div className="text-[11px] text-slate-500 font-sans">Cases allowed to take recovery action automatically.</div>
         </div>
       </div>
@@ -241,13 +253,13 @@ export default function CasesPage() {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-100 text-slate-600 uppercase font-mono text-[11px] border-b border-slate-200">
               <tr>
-                <th className="px-4 py-3 font-semibold">Payment</th>
-                <th className="px-4 py-3 font-semibold">Amount</th>
-                <th className="px-4 py-3 font-semibold">What happened</th>
-                <th className="px-4 py-3 font-semibold">Decision</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
-                <th className="px-4 py-3 font-semibold">Retries</th>
-                <th className="px-4 py-3 font-semibold text-right">Audit</th>
+                <th className="px-4 py-3 font-semibold text-slate-500">Payment</th>
+                <th className="px-4 py-3 font-semibold text-slate-900">Amount</th>
+                <th className="px-4 py-3 font-semibold text-slate-900">What happened</th>
+                <th className="px-4 py-3 font-semibold text-slate-900">Decision</th>
+                <th className="px-4 py-3 font-semibold text-slate-900">Status</th>
+                <th className="px-4 py-3 font-semibold text-slate-400">Retries</th>
+                <th className="px-4 py-3 font-semibold text-right text-slate-400">Audit</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -261,13 +273,13 @@ export default function CasesPage() {
                 cases.map((c) => {
                   return (
                     <tr key={c.id} className="hover:bg-slate-50/80 transition">
-                      <td className="px-4 py-3.5 font-mono font-medium text-slate-900">
+                      <td className="px-4 py-3.5 font-mono text-slate-500 text-xs">
                         {c.razorpay_payment_id}
                       </td>
-                      <td className="px-4 py-3.5 font-mono font-semibold text-slate-900">
+                      <td className="px-4 py-3.5 font-mono font-bold text-slate-900 text-sm">
                         {c.currency || "INR"} {(c.amount ?? 0).toFixed(2)}
                       </td>
-                      <td className="px-4 py-3.5 text-slate-700 font-sans font-medium">
+                      <td className="px-4 py-3.5 text-slate-800 font-sans font-medium text-xs">
                         {getWhatHappenedText(c)}
                       </td>
                       <td className="px-4 py-3.5 font-sans">
@@ -276,7 +288,7 @@ export default function CasesPage() {
                       <td className="px-4 py-3.5 font-sans">
                         {getStatusText(c)}
                       </td>
-                      <td className="px-4 py-3.5 font-mono text-slate-500">
+                      <td className="px-4 py-3.5 font-mono text-slate-400 text-xs">
                         {c.retry_count} / 2
                       </td>
                       <td className="px-4 py-3.5 text-right">
