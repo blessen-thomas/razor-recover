@@ -153,7 +153,15 @@ export default function CaseDetailPage() {
             <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300">AI Evidence Synthesis & Decision</h3>
             {investigation ? (
               <div className="space-y-2 text-sm text-slate-300">
-                <div><span className="text-slate-400">Proposed Action:</span> <strong className="text-emerald-400 font-mono">{investigation.proposed_decision}</strong></div>
+                <div>
+                  <span className="text-slate-400">Proposed Action:</span>{" "}
+                  <strong className={`font-mono ${
+                    investigation.proposed_decision === "RETRY_NOW" || investigation.proposed_decision === "RETRY_LATER" ? "text-emerald-400" :
+                    investigation.proposed_decision === "ESCALATE" ? "text-rose-400" : "text-amber-400"
+                  }`}>
+                    {investigation.proposed_decision}
+                  </strong>
+                </div>
                 <div><span className="text-slate-400">Reasoning:</span> {investigation.reasoning}</div>
               </div>
             ) : (
@@ -170,6 +178,36 @@ export default function CaseDetailPage() {
               </div>
             ) : (
               <p className="text-xs text-slate-500">No policy check evaluated.</p>
+            )}
+          </div>
+
+          <div className="bg-slate-800 border border-slate-700 p-5 rounded-xl space-y-3">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300">Executed Recovery Action</h3>
+            {recoveryAction ? (
+              <div className="space-y-2 text-sm text-slate-300">
+                <div><span className="text-slate-400">Action Type:</span> <strong className="font-mono text-slate-200">{recoveryAction.action_type}</strong></div>
+                <div><span className="text-slate-400">Status:</span> <strong className={`font-mono ${recoveryAction.status === "SUCCESS" ? "text-emerald-400" : "text-rose-400"}`}>{recoveryAction.status}</strong></div>
+                {recoveryAction.razorpay_entity_id && (
+                  <div><span className="text-slate-400">Razorpay Link ID:</span> <span className="font-mono text-slate-200">{recoveryAction.razorpay_entity_id}</span></div>
+                )}
+                {recoveryAction.api_response_payload?.short_url && (
+                  <div>
+                    <span className="text-slate-400">Payment Link:</span>{" "}
+                    <a
+                      href={recoveryAction.api_response_payload.short_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-400 underline hover:text-blue-300 font-mono text-xs"
+                    >
+                      {recoveryAction.api_response_payload.short_url}
+                    </a>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400 font-mono bg-slate-950 p-2.5 rounded border border-slate-700/60">
+                🚫 No recovery action executed. Autonomous recovery suppressed by safety engine.
+              </p>
             )}
           </div>
         </div>
