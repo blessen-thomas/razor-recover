@@ -122,9 +122,9 @@ export default function CasesPage() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Top Header Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-800/80">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-800">
         <div>
           <h1 className="text-xl font-bold text-slate-100 tracking-tight">Payment Recovery Operations</h1>
           <p className="text-xs text-slate-400 font-mono mt-0.5">
@@ -138,19 +138,19 @@ export default function CasesPage() {
             <button
               onClick={() => setTestMenuOpen(!testMenuOpen)}
               disabled={seeding !== null}
-              className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 px-3 py-1.5 rounded text-xs font-mono transition disabled:opacity-50"
+              className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 px-3 py-1.5 rounded-sm text-xs font-mono transition disabled:opacity-50"
             >
               {seeding ? (
                 <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-400" />
               ) : (
-                <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
               )}
               <span>Test Scenarios</span>
               <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-0.5" />
             </button>
 
             {testMenuOpen && (
-              <div className="absolute right-0 mt-1.5 w-64 bg-slate-900 border border-slate-700 rounded shadow-2xl z-50 py-1 text-xs">
+              <div className="absolute right-0 mt-1.5 w-64 bg-slate-900 border border-slate-800 rounded-sm shadow-2xl z-50 py-1 text-xs">
                 <div className="px-3 py-1.5 text-[10px] font-mono text-slate-500 uppercase tracking-wider border-b border-slate-800">
                   Select Demo Scenario
                 </div>
@@ -166,7 +166,7 @@ export default function CasesPage() {
 
                 <button
                   onClick={() => handleSeed("unsafe")}
-                  className="w-full text-left px-3 py-2 hover:bg-slate-800 text-slate-200 transition flex items-center justify-between border-t border-slate-800/60 font-mono"
+                  className="w-full text-left px-3 py-2 hover:bg-slate-800 text-slate-200 transition flex items-center justify-between border-t border-slate-800/80 font-mono"
                 >
                   <div>
                     <div className="font-semibold text-rose-400">2. Safety Halt (Contradiction)</div>
@@ -176,7 +176,7 @@ export default function CasesPage() {
 
                 <button
                   onClick={() => handleSeed("reconcile")}
-                  className="w-full text-left px-3 py-2 hover:bg-slate-800 text-slate-200 transition flex items-center justify-between border-t border-slate-800/60 font-mono"
+                  className="w-full text-left px-3 py-2 hover:bg-slate-800 text-slate-200 transition flex items-center justify-between border-t border-slate-800/80 font-mono"
                 >
                   <div>
                     <div className="font-semibold text-blue-400">3. Stale Reconciliation</div>
@@ -189,7 +189,7 @@ export default function CasesPage() {
 
           <button
             onClick={fetchCases}
-            className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 px-3 py-1.5 rounded text-xs font-mono transition"
+            className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 px-3 py-1.5 rounded-sm text-xs font-mono transition"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
             <span>Refresh</span>
@@ -199,19 +199,19 @@ export default function CasesPage() {
 
       {/* Operational Summary Metrics Panel */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded space-y-1">
+        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-sm space-y-1">
           <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400">Revenue at Risk</div>
           <div className="text-xl font-bold font-mono text-slate-100">{formatCurrency(revenueAtRisk)}</div>
           <div className="text-[10px] text-slate-400 font-sans">Failed payments requiring recovery or investigation.</div>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded space-y-1">
+        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-sm space-y-1">
           <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400">Recovery in Progress</div>
           <div className="text-xl font-bold font-mono text-emerald-400">{formatCurrency(recoveryInProgress)}</div>
           <div className="text-[10px] text-slate-400 font-sans">Payments for which autonomous recovery action started.</div>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded space-y-1">
+        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-sm space-y-1">
           <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400">Attention Required</div>
           <div className={`text-xl font-bold font-mono ${casesNeedingAttention > 0 ? "text-amber-400" : "text-slate-300"}`}>
             {casesNeedingAttention}
@@ -219,7 +219,7 @@ export default function CasesPage() {
           <div className="text-[10px] text-slate-400 font-sans">Cases blocked, escalated, or waiting for reconciliation.</div>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded space-y-1">
+        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-sm space-y-1">
           <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400">Autonomous Action Rate</div>
           <div className="text-xl font-bold font-mono text-slate-100">{autonomousActionRate}%</div>
           <div className="text-[10px] text-slate-400 font-sans">Cases allowed to take recovery action automatically.</div>
@@ -227,8 +227,8 @@ export default function CasesPage() {
       </div>
 
       {/* Primary Operations Cases Table */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+      <div className="bg-slate-900/80 border border-slate-800 rounded-sm overflow-hidden">
+        <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between bg-slate-900">
           <div className="text-xs font-mono uppercase tracking-wider text-slate-300 font-semibold">
             Active Recovery Cases
           </div>
@@ -239,7 +239,7 @@ export default function CasesPage() {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-950/80 text-slate-400 uppercase font-mono text-[11px] border-b border-slate-800">
+            <thead className="bg-slate-950 text-slate-400 uppercase font-mono text-[11px] border-b border-slate-800">
               <tr>
                 <th className="px-4 py-3 font-semibold">Payment</th>
                 <th className="px-4 py-3 font-semibold">Amount</th>
@@ -250,7 +250,7 @@ export default function CasesPage() {
                 <th className="px-4 py-3 font-semibold text-right">Audit</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-slate-800/80">
               {cases.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center py-12 text-slate-500 font-mono text-xs">
@@ -260,7 +260,7 @@ export default function CasesPage() {
               ) : (
                 cases.map((c) => {
                   return (
-                    <tr key={c.id} className="hover:bg-slate-800/40 transition">
+                    <tr key={c.id} className="hover:bg-slate-800/50 transition">
                       <td className="px-4 py-3.5 font-mono font-medium text-slate-200">
                         {c.razorpay_payment_id}
                       </td>

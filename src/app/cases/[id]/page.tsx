@@ -81,7 +81,7 @@ export default function CaseDetailPage() {
           <button
             onClick={handleReconcile}
             disabled={reconciling}
-            className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded text-xs font-mono transition disabled:opacity-50"
+            className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-sm text-xs font-mono transition disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${reconciling ? "animate-spin" : ""}`} /> Trigger Reconciliation API
           </button>
@@ -90,7 +90,7 @@ export default function CaseDetailPage() {
 
       {/* Reconciliation Warning Banner */}
       {c.safety_state === "AWAITING_RECONCILIATION" && (
-        <div className="bg-blue-950/60 border border-blue-800 p-4 rounded flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono">
+        <div className="bg-blue-950/60 border border-blue-800 p-4 rounded-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono">
           <div className="flex items-start space-x-3">
             <AlertTriangle className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
             <div>
@@ -103,7 +103,7 @@ export default function CaseDetailPage() {
           <button
             onClick={handleReconcile}
             disabled={reconciling}
-            className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded text-xs font-mono shrink-0 transition disabled:opacity-50"
+            className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-sm text-xs font-mono shrink-0 transition disabled:opacity-50"
           >
             {reconciling ? "Reconciling..." : "Reconcile Now"}
           </button>
@@ -111,12 +111,12 @@ export default function CaseDetailPage() {
       )}
 
       {/* Case Header Summary Box */}
-      <div className="bg-slate-900/90 border border-slate-800 p-5 rounded space-y-4">
+      <div className="bg-slate-900/90 border border-slate-800 p-5 rounded-sm space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center space-x-3">
               <h1 className="text-xl font-bold font-mono text-slate-100">{c.razorpay_payment_id}</h1>
-              <span className={`px-2.5 py-0.5 rounded text-[11px] font-mono font-semibold uppercase tracking-wider ${
+              <span className={`px-2 py-0.5 rounded-sm text-[11px] font-mono font-semibold uppercase tracking-wider ${
                 c.safety_state === "ACTIVE" ? "bg-emerald-950/80 text-emerald-400 border border-emerald-800" :
                 c.safety_state === "AWAITING_RECONCILIATION" ? "bg-blue-950/80 text-blue-400 border border-blue-800" :
                 "bg-rose-950/80 text-rose-400 border border-rose-800"
@@ -180,7 +180,7 @@ export default function CaseDetailPage() {
               }
 
               return (
-                <div key={step.number} className={`p-2.5 rounded border text-xs font-mono ${cardStyle}`}>
+                <div key={step.number} className={`p-2.5 rounded-sm border text-xs font-mono ${cardStyle}`}>
                   <div className="flex items-center justify-between text-[10px] text-slate-500">
                     <span>STEP {step.number}</span>
                     <span>{step.actor}</span>
@@ -198,7 +198,7 @@ export default function CaseDetailPage() {
         {/* Left Column: Decision Story & Safety Rules */}
         <div className="space-y-4">
           {/* Section 1: AI Evidence Synthesis */}
-          <div className="bg-slate-900/80 border border-slate-800 p-4 rounded space-y-3">
+          <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-sm space-y-3">
             <div className="flex items-center justify-between border-b border-slate-800 pb-2">
               <span className="text-xs font-mono font-semibold uppercase tracking-wider text-slate-300">
                 1. AI Evidence Synthesis & Proposal
@@ -219,7 +219,7 @@ export default function CaseDetailPage() {
                 </div>
                 <div>
                   <span className="text-slate-400">Evidence Reasoning:</span>
-                  <p className="text-slate-300 font-sans mt-0.5 leading-relaxed bg-slate-950 p-2.5 rounded border border-slate-800/60">
+                  <p className="text-slate-300 font-sans mt-0.5 leading-relaxed bg-slate-950 p-2.5 rounded-sm border border-slate-800/80">
                     {investigation.reasoning}
                   </p>
                 </div>
@@ -228,7 +228,7 @@ export default function CaseDetailPage() {
                     <span className="text-slate-400">Risk Factors:</span>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {investigation.risk_factors.map((rf: string, idx: number) => (
-                        <span key={idx} className="bg-rose-950/60 border border-rose-800 text-rose-300 px-2 py-0.5 rounded text-[10px]">
+                        <span key={idx} className="bg-rose-950/60 border border-rose-800 text-rose-300 px-2 py-0.5 rounded-sm text-[10px]">
                           {rf}
                         </span>
                       ))}
@@ -242,7 +242,7 @@ export default function CaseDetailPage() {
           </div>
 
           {/* Section 2: Deterministic Policy Engine Check */}
-          <div className="bg-slate-900/80 border border-slate-800 p-4 rounded space-y-3">
+          <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-sm space-y-3">
             <div className="flex items-center justify-between border-b border-slate-800 pb-2">
               <span className="text-xs font-mono font-semibold uppercase tracking-wider text-slate-300">
                 2. Deterministic Policy Safety Check
@@ -287,7 +287,7 @@ export default function CaseDetailPage() {
                   </div>
                 )}
 
-                <div className="bg-slate-950 p-2.5 rounded border border-slate-800/60 text-slate-300">
+                <div className="bg-slate-950 p-2.5 rounded-sm border border-slate-800/80 text-slate-300">
                   <span className="text-slate-500 text-[10px] block">DETERMINISTIC EVALUATION REASON:</span>
                   <span className="text-[11px]">{policyCheck.deterministic_reason}</span>
                 </div>
@@ -298,7 +298,7 @@ export default function CaseDetailPage() {
           </div>
 
           {/* Section 3: Executed Recovery Action */}
-          <div className="bg-slate-900/80 border border-slate-800 p-4 rounded space-y-3">
+          <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-sm space-y-3">
             <div className="flex items-center justify-between border-b border-slate-800 pb-2">
               <span className="text-xs font-mono font-semibold uppercase tracking-wider text-slate-300">
                 3. Autonomous Execution Result
@@ -329,7 +329,7 @@ export default function CaseDetailPage() {
                 )}
 
                 {recoveryAction.api_response_payload?.short_url && (
-                  <div className="bg-slate-950 p-2.5 rounded border border-slate-800/60">
+                  <div className="bg-slate-950 p-2.5 rounded-sm border border-slate-800/80">
                     <span className="text-slate-500 text-[10px] block">GENERATED PAYMENT RECOVERY LINK:</span>
                     <a
                       href={recoveryAction.api_response_payload.short_url}
@@ -343,7 +343,7 @@ export default function CaseDetailPage() {
                 )}
               </div>
             ) : (
-              <div className="bg-slate-950 p-3 rounded border border-slate-800/60 text-xs font-mono text-slate-400">
+              <div className="bg-slate-950 p-3 rounded-sm border border-slate-800/80 text-xs font-mono text-slate-400">
                 <div className="font-semibold text-amber-400">AUTONOMOUS ACTION SUPPRESSED</div>
                 <div className="text-[11px] text-slate-400 mt-1 font-sans">
                   No financial or recovery API call was executed because deterministic safety checks did not pass status APPROVED.
@@ -354,7 +354,7 @@ export default function CaseDetailPage() {
         </div>
 
         {/* Right Column: 7-Step Complete Audit Trail Log */}
-        <div className="bg-slate-900/80 border border-slate-800 p-4 rounded space-y-3">
+        <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-sm space-y-3">
           <div className="flex items-center justify-between border-b border-slate-800 pb-2">
             <span className="text-xs font-mono font-semibold uppercase tracking-wider text-slate-300">
               Complete Audit Trail Log
@@ -366,8 +366,8 @@ export default function CaseDetailPage() {
 
           <div className="space-y-2.5 max-h-[680px] overflow-y-auto pr-1">
             {auditTrail?.map((log: any) => (
-              <div key={log.id} className="bg-slate-950 border border-slate-800/80 p-3 rounded text-xs font-mono space-y-1.5">
-                <div className="flex items-center justify-between text-[11px] pb-1 border-b border-slate-800/60">
+              <div key={log.id} className="bg-slate-950 border border-slate-800/80 p-3 rounded-sm text-xs font-mono space-y-1.5">
+                <div className="flex items-center justify-between text-[11px] pb-1 border-b border-slate-800/80">
                   <span className="font-semibold text-blue-400">
                     Step {log.step_number}: {log.step_name}
                   </span>
@@ -375,7 +375,7 @@ export default function CaseDetailPage() {
                     {log.actor} | {new Date(log.created_at).toLocaleTimeString()}
                   </span>
                 </div>
-                <pre className="text-[11px] font-mono bg-slate-900/90 p-2 rounded text-slate-300 overflow-x-auto leading-relaxed border border-slate-800/40">
+                <pre className="text-[11px] font-mono bg-slate-900/90 p-2 rounded-sm text-slate-300 overflow-x-auto leading-relaxed border border-slate-800/40">
                   {JSON.stringify(log.payload, null, 2)}
                 </pre>
               </div>
