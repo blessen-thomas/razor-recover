@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, RefreshCw, CheckCircle2, XCircle, AlertTriangle, ExternalLink, Shield } from "lucide-react";
+import { ArrowLeft, RefreshCw, CheckCircle2, XCircle, AlertTriangle, ExternalLink } from "lucide-react";
 
 export default function CaseDetailPage() {
   const params = useParams();

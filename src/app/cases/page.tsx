@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { RefreshCw, ArrowRight, ChevronDown, Check, AlertCircle } from "lucide-react";
+import { RefreshCw, ArrowRight, ChevronDown } from "lucide-react";
 
 export default function CasesPage() {
   const [cases, setCases] = useState<any[]>([]);
