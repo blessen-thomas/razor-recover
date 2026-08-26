@@ -110,7 +110,7 @@ export default function CaseDetailPage() {
                 SAFETY STATE: {c.safety_state}
               </span>
             </div>
-            <p className="text-sm text-slate-400 mt-1">Amount: {c.currency} {c.amount.toFixed(2)} | Error Code: {c.error_code || "N/A"}</p>
+            <p className="text-sm text-slate-400 mt-1">Amount: {c.currency || "INR"} {(c.amount ?? 0).toFixed(2)} | Error Code: {c.error_code || "N/A"}</p>
           </div>
           <div className="text-right">
             <span className="text-xs text-slate-400">Integrity Taxonomy</span>
@@ -133,6 +133,8 @@ export default function CaseDetailPage() {
               } else {
                 style = "bg-slate-900 border-blue-500/50 text-blue-400";
               }
+            } else if (step.number === 6 && c.safety_state === "AWAITING_RECONCILIATION") {
+              style = "bg-blue-950/40 border-blue-500/80 text-blue-300 animate-pulse";
             }
 
             return (

@@ -133,11 +133,13 @@ export default function CasesPage() {
                       {c.razorpay_payment_id}
                     </td>
                     <td className="px-6 py-4 font-semibold text-slate-100">
-                      {c.currency} {c.amount.toFixed(2)}
+                      {c.currency || "INR"} {(c.amount ?? 0).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 font-mono text-xs">
                       <span className={`px-2 py-1 rounded font-semibold ${
-                        c.integrity_state === "TRUSTED" ? "bg-emerald-950 text-emerald-400 border border-emerald-800" : "bg-rose-950 text-rose-400 border border-rose-800"
+                        c.integrity_state === "TRUSTED" ? "bg-emerald-950 text-emerald-400 border border-emerald-800" :
+                        c.integrity_state === "STALE" ? "bg-amber-950 text-amber-400 border border-amber-800" :
+                        "bg-rose-950 text-rose-400 border border-rose-800"
                       }`}>
                         {c.integrity_state}
                       </span>
@@ -146,7 +148,11 @@ export default function CasesPage() {
                       {getSafetyStateBadge(c.safety_state)}
                     </td>
                     <td className="px-6 py-4">
-                      <span className="font-semibold text-xs uppercase tracking-wider text-slate-300">
+                      <span className={`px-2 py-0.5 rounded text-[11px] font-semibold uppercase tracking-wider ${
+                        c.current_status === "RECOVERED" || c.current_status === "RECOVERY_INITIATED" ? "bg-emerald-950/60 text-emerald-300 border border-emerald-800/60" :
+                        c.current_status === "ESCALATED" || c.current_status === "FAILED" ? "bg-rose-950/60 text-rose-300 border border-rose-800/60" :
+                        "bg-slate-800 text-slate-300 border border-slate-700"
+                      }`}>
                         {c.current_status}
                       </span>
                     </td>
