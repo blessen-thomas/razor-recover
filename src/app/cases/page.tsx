@@ -58,13 +58,13 @@ export default function CasesPage() {
   // Compute operational summary metrics from actual cases
   const totalCases = cases.length;
   const revenueAtRisk = cases.reduce((sum, c) => sum + (c.amount || 0), 0);
-  const recoveredRevenue = cases
+  const recoveryInProgress = cases
     .filter((c) => c.current_status === "RECOVERY_INITIATED" || c.current_status === "RECOVERED")
     .reduce((sum, c) => sum + (c.amount || 0), 0);
   const casesNeedingAttention = cases.filter(
     (c) => c.safety_state === "ESCALATED" || c.safety_state === "BLOCKED" || c.safety_state === "AWAITING_RECONCILIATION"
   ).length;
-  const recoveryRate = totalCases > 0
+  const autonomousActionRate = totalCases > 0
     ? Math.round((cases.filter((c) => c.current_status === "RECOVERY_INITIATED" || c.current_status === "RECOVERED").length / totalCases) * 100)
     : 0;
 
@@ -72,12 +72,61 @@ export default function CasesPage() {
     return `₹${val.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
+  const getWhatHappenedText = (c: any) => {
+    switch (c.integrity_state) {
+      case "TRUSTED":
+        return c.error_description || "Temporary payment failure";
+      case "CONTRADICTORY":
+        return "Payment status conflict";
+      case "STALE":
+        return "Outdated payment information";
+      case "DUPLICATE":
+        return "Duplicate event received";
+      case "OUT_OF_ORDER":
+        return "Out-of-order event sequence";
+      case "INCOMPLETE":
+        return "Incomplete event payload";
+      default:
+        return c.integrity_state;
+    }
+  };
+
+  const getDecisionText = (c: any) => {
+    if (c.safety_state === "AWAITING_RECONCILIATION" || c.integrity_state === "STALE") {
+      return <span className="text-blue-400 font-semibold">Reconcile</span>;
+    }
+    if (c.safety_state === "ESCALATED" || c.safety_state === "BLOCKED" || c.integrity_state === "CONTRADICTORY") {
+      return <span className="text-rose-400 font-semibold">Stop</span>;
+    }
+    return <span className="text-emerald-400 font-semibold">Recover</span>;
+  };
+
+  const getStatusText = (c: any) => {
+    switch (c.current_status) {
+      case "RECOVERY_INITIATED":
+        return <span className="text-emerald-400 font-semibold">Recovery in progress</span>;
+      case "RECOVERED":
+        return <span className="text-emerald-400 font-semibold">Recovered</span>;
+      case "ESCALATED":
+        return <span className="text-rose-400 font-semibold">Needs review</span>;
+      case "FAILED":
+        return <span className="text-rose-400 font-semibold">Failed</span>;
+      case "DETECTED":
+        if (c.safety_state === "AWAITING_RECONCILIATION") {
+          return <span className="text-blue-400 font-semibold">Checking payment status</span>;
+        }
+        return <span className="text-slate-300 font-semibold">Detected</span>;
+      default:
+        return <span className="text-slate-300 font-semibold">{c.current_status}</span>;
+    }
+  };
+
   return (
     <div className="space-y-5">
       {/* Top Header Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-800/80">
         <div>
-          <h1 className="text-xl font-bold text-slate-100 tracking-tight">Recovery Cases & Safety Audit</h1>
+          <h1 className="text-xl font-bold text-slate-100 tracking-tight">Payment Recovery Operations</h1>
           <p className="text-xs text-slate-400 font-mono mt-0.5">
             Real-time deterministic safety engine evaluation and autonomous payment recovery audit trail
           </p>
@@ -153,13 +202,13 @@ export default function CasesPage() {
         <div className="bg-slate-900/90 border border-slate-800 p-4 rounded space-y-1">
           <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400">Revenue at Risk</div>
           <div className="text-xl font-bold font-mono text-slate-100">{formatCurrency(revenueAtRisk)}</div>
-          <div className="text-[10px] text-slate-500 font-mono">{totalCases} total recovery case(s)</div>
+          <div className="text-[10px] text-slate-400 font-sans">Failed payments requiring recovery or investigation.</div>
         </div>
 
         <div className="bg-slate-900/90 border border-slate-800 p-4 rounded space-y-1">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400">Recovered Revenue</div>
-          <div className="text-xl font-bold font-mono text-emerald-400">{formatCurrency(recoveredRevenue)}</div>
-          <div className="text-[10px] text-slate-500 font-mono">Via Razorpay Payment Links</div>
+          <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400">Recovery in Progress</div>
+          <div className="text-xl font-bold font-mono text-emerald-400">{formatCurrency(recoveryInProgress)}</div>
+          <div className="text-[10px] text-slate-400 font-sans">Payments for which autonomous recovery action started.</div>
         </div>
 
         <div className="bg-slate-900/90 border border-slate-800 p-4 rounded space-y-1">
@@ -167,13 +216,13 @@ export default function CasesPage() {
           <div className={`text-xl font-bold font-mono ${casesNeedingAttention > 0 ? "text-amber-400" : "text-slate-300"}`}>
             {casesNeedingAttention}
           </div>
-          <div className="text-[10px] text-slate-500 font-mono">Escalated or awaiting reconcile</div>
+          <div className="text-[10px] text-slate-400 font-sans">Cases blocked, escalated, or waiting for reconciliation.</div>
         </div>
 
         <div className="bg-slate-900/90 border border-slate-800 p-4 rounded space-y-1">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400">Autonomous Recovery Rate</div>
-          <div className="text-xl font-bold font-mono text-slate-100">{recoveryRate}%</div>
-          <div className="text-[10px] text-slate-500 font-mono">Policy-approved recovery execution</div>
+          <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400">Autonomous Action Rate</div>
+          <div className="text-xl font-bold font-mono text-slate-100">{autonomousActionRate}%</div>
+          <div className="text-[10px] text-slate-400 font-sans">Cases allowed to take recovery action automatically.</div>
         </div>
       </div>
 
@@ -192,16 +241,16 @@ export default function CasesPage() {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-950/80 text-slate-400 uppercase font-mono text-[11px] border-b border-slate-800">
               <tr>
-                <th className="px-4 py-3 font-semibold">Payment / Case ID</th>
+                <th className="px-4 py-3 font-semibold">Payment</th>
                 <th className="px-4 py-3 font-semibold">Amount</th>
-                <th className="px-4 py-3 font-semibold">Integrity State</th>
-                <th className="px-4 py-3 font-semibold">Safety Engine State</th>
+                <th className="px-4 py-3 font-semibold">What happened</th>
+                <th className="px-4 py-3 font-semibold">Decision</th>
                 <th className="px-4 py-3 font-semibold">Status</th>
                 <th className="px-4 py-3 font-semibold">Retries</th>
-                <th className="px-4 py-3 font-semibold text-right">Audit Trail</th>
+                <th className="px-4 py-3 font-semibold text-right">Audit</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 font-mono">
+            <tbody className="divide-y divide-slate-800/60">
               {cases.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center py-12 text-slate-500 font-mono text-xs">
@@ -212,49 +261,22 @@ export default function CasesPage() {
                 cases.map((c) => {
                   return (
                     <tr key={c.id} className="hover:bg-slate-800/40 transition">
-                      <td className="px-4 py-3.5 font-medium text-slate-200">
+                      <td className="px-4 py-3.5 font-mono font-medium text-slate-200">
                         {c.razorpay_payment_id}
                       </td>
-                      <td className="px-4 py-3.5 font-semibold text-slate-100">
+                      <td className="px-4 py-3.5 font-mono font-semibold text-slate-100">
                         {c.currency || "INR"} {(c.amount ?? 0).toFixed(2)}
                       </td>
-                      <td className="px-4 py-3.5">
-                        <span className={`inline-block font-semibold ${
-                          c.integrity_state === "TRUSTED" ? "text-emerald-400" :
-                          c.integrity_state === "STALE" ? "text-amber-400" :
-                          "text-rose-400"
-                        }`}>
-                          {c.integrity_state}
-                        </span>
+                      <td className="px-4 py-3.5 text-slate-300 font-sans font-medium">
+                        {getWhatHappenedText(c)}
                       </td>
-                      <td className="px-4 py-3.5">
-                        {c.safety_state === "ACTIVE" && (
-                          <span className="text-emerald-400 font-semibold flex items-center gap-1.5">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span> ACTIVE
-                          </span>
-                        )}
-                        {c.safety_state === "ESCALATED" && (
-                          <span className="text-rose-400 font-semibold flex items-center gap-1.5">
-                            <span className="h-1.5 w-1.5 rounded-full bg-rose-400"></span> ESCALATED
-                          </span>
-                        )}
-                        {c.safety_state === "BLOCKED" && (
-                          <span className="text-rose-400 font-semibold flex items-center gap-1.5">
-                            <span className="h-1.5 w-1.5 rounded-full bg-rose-400"></span> BLOCKED
-                          </span>
-                        )}
-                        {c.safety_state === "AWAITING_RECONCILIATION" && (
-                          <span className="text-blue-400 font-semibold flex items-center gap-1.5">
-                            <span className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse"></span> AWAITING RECONCILIATION
-                          </span>
-                        )}
+                      <td className="px-4 py-3.5 font-sans">
+                        {getDecisionText(c)}
                       </td>
-                      <td className="px-4 py-3.5">
-                        <span className="text-slate-300 font-semibold">
-                          {c.current_status}
-                        </span>
+                      <td className="px-4 py-3.5 font-sans">
+                        {getStatusText(c)}
                       </td>
-                      <td className="px-4 py-3.5 text-slate-400">
+                      <td className="px-4 py-3.5 font-mono text-slate-400">
                         {c.retry_count} / 2
                       </td>
                       <td className="px-4 py-3.5 text-right">
