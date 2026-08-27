@@ -13,10 +13,29 @@ export async function GET(
     return NextResponse.json({ error: "CASE_NOT_FOUND" }, { status: 404 });
   }
 
-  const events = Array.from(memoryStore.events.values()).filter((e) => e.case_id === caseId);
+  const events: any[] = [];
+  for (const e of memoryStore.events.values()) {
+    if (e.case_id === caseId) events.push(e);
+  }
+
   const investigation = memoryStore.investigations.get(paymentCase.razorpay_payment_id) || null;
-  const policyCheck = Array.from(memoryStore.policyChecks.values()).find((p) => p.case_id === caseId) || null;
-  const recoveryAction = Array.from(memoryStore.recoveryActions.values()).find((a) => a.case_id === caseId) || null;
+
+  let policyCheck: any = null;
+  for (const p of memoryStore.policyChecks.values()) {
+    if (p.case_id === caseId) {
+      policyCheck = p;
+      break;
+    }
+  }
+
+  let recoveryAction: any = null;
+  for (const a of memoryStore.recoveryActions.values()) {
+    if (a.case_id === caseId) {
+      recoveryAction = a;
+      break;
+    }
+  }
+
   const auditTrail = getAuditTrail(caseId);
 
   return NextResponse.json({

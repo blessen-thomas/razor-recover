@@ -25,15 +25,21 @@ export default function CasesPage() {
   };
 
   const handleSeed = async (scenario: "happy" | "unsafe" | "reconcile") => {
+    if (seeding !== null) return;
     try {
       setSeeding(scenario);
       setTestMenuOpen(false);
-      await fetch("/api/seed", {
+      const res = await fetch("/api/seed", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ scenario }),
       });
-      await fetchCases();
+      const data = await res.json();
+      if (data.cases) {
+        setCases(data.cases);
+      } else {
+        await fetchCases();
+      }
     } catch (err) {
       console.error("Seed error:", err);
     } finally {
@@ -72,10 +78,51 @@ export default function CasesPage() {
     return `₹${val.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
+  const formatExactTime = (iso?: string) => {
+    if (!iso) return { time: "—", date: "" };
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return { time: "—", date: "" };
+
+    const hours = d.getHours().toString().padStart(2, "0");
+    const minutes = d.getMinutes().toString().padStart(2, "0");
+    const seconds = d.getSeconds().toString().padStart(2, "0");
+    const timeStr = `${hours}:${minutes}:${seconds}`;
+
+    const now = new Date();
+    const isToday =
+      d.getDate() === now.getDate() &&
+      d.getMonth() === now.getMonth() &&
+      d.getFullYear() === now.getFullYear();
+
+    const dateStr = isToday
+      ? "Today"
+      : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+
+    return { time: timeStr, date: dateStr };
+  };
+
+  const formatFullDateTime = (iso?: string) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    const datePart = d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+    const timePart = d.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    });
+    return `${datePart} · ${timePart}`;
+  };
+
   const getWhatHappenedText = (c: any) => {
     switch (c.integrity_state) {
       case "TRUSTED":
-        return c.error_description || "Temporary payment failure";
+        return "Temporary payment failure";
       case "CONTRADICTORY":
         return "Payment status conflict";
       case "STALE":
@@ -102,13 +149,13 @@ export default function CasesPage() {
     if (c.safety_state === "ESCALATED" || c.safety_state === "BLOCKED" || c.integrity_state === "CONTRADICTORY") {
       return (
         <span className="text-rose-700 font-semibold bg-rose-50 px-2 py-0.5 rounded-sm border border-rose-200 text-xs">
-          Stop
+          Recovery blocked
         </span>
       );
     }
     return (
       <span className="text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-sm border border-emerald-200 text-xs">
-        Recover
+        Safe to recover
       </span>
     );
   };
@@ -254,6 +301,7 @@ export default function CasesPage() {
             <thead className="bg-slate-100 text-slate-600 uppercase font-mono text-[11px] border-b border-slate-200">
               <tr>
                 <th className="px-4 py-3 font-semibold text-slate-500">Payment</th>
+                <th className="px-4 py-3 font-semibold text-slate-400">Received</th>
                 <th className="px-4 py-3 font-semibold text-slate-900">Amount</th>
                 <th className="px-4 py-3 font-semibold text-slate-900">What happened</th>
                 <th className="px-4 py-3 font-semibold text-slate-900">Decision</th>
@@ -265,43 +313,69 @@ export default function CasesPage() {
             <tbody className="divide-y divide-slate-100">
               {cases.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-slate-500 font-sans text-xs">
+                  <td colSpan={8} className="text-center py-12 text-slate-500 font-sans text-xs">
                     No payment recovery cases registered. RazorRecover monitors failed payments, evaluates recovery safety, and acts automatically when policy allows. Select "Test Scenarios" above or send webhooks to test.
                   </td>
                 </tr>
               ) : (
-                cases.map((c) => {
-                  return (
-                    <tr key={c.id} className="hover:bg-slate-50/80 transition">
-                      <td className="px-4 py-3.5 font-mono text-slate-500 text-xs">
-                        {c.razorpay_payment_id}
-                      </td>
-                      <td className="px-4 py-3.5 font-mono font-bold text-slate-900 text-sm">
-                        {c.currency || "INR"} {(c.amount ?? 0).toFixed(2)}
-                      </td>
-                      <td className="px-4 py-3.5 text-slate-800 font-sans font-medium text-xs">
-                        {getWhatHappenedText(c)}
-                      </td>
-                      <td className="px-4 py-3.5 font-sans">
-                        {getDecisionText(c)}
-                      </td>
-                      <td className="px-4 py-3.5 font-sans">
-                        {getStatusText(c)}
-                      </td>
-                      <td className="px-4 py-3.5 font-mono text-slate-400 text-xs">
-                        {c.retry_count} / 2
-                      </td>
-                      <td className="px-4 py-3.5 text-right">
-                        <Link
-                          href={`/cases/${c.id}`}
-                          className="inline-flex items-center gap-1 text-xs font-mono text-blue-600 hover:text-blue-800 hover:underline transition"
+                cases
+                  .slice()
+                  .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                  .map((c, index) => {
+                    const { time, date } = formatExactTime(c.created_at);
+                    const fullDateTime = formatFullDateTime(c.created_at);
+                    const isLatest = index === 0;
+
+                    return (
+                      <tr
+                        key={c.id}
+                        className={`hover:bg-slate-50/80 transition ${
+                          isLatest ? "border-l-2 border-l-blue-600" : "border-l-2 border-l-transparent"
+                        }`}
+                      >
+                        <td className="px-4 py-3.5 font-mono text-slate-500 text-xs">
+                          <div className="flex items-center space-x-1.5">
+                            <span>{c.razorpay_payment_id}</span>
+                            {isLatest && (
+                              <span className="px-1 py-0.5 bg-slate-100 text-slate-600 text-[9px] font-mono font-medium rounded-sm border border-slate-200 uppercase tracking-wider">
+                                LATEST
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td
+                          className="px-4 py-3.5 font-mono text-xs whitespace-nowrap"
+                          title={fullDateTime}
                         >
-                          Inspect Audit <ArrowRight className="w-3 h-3" />
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })
+                          <div className="text-slate-700 font-medium">{time}</div>
+                          <div className="text-[10px] text-slate-400 font-sans">{date}</div>
+                        </td>
+                        <td className="px-4 py-3.5 font-mono font-bold text-slate-900 text-sm">
+                          {c.currency || "INR"} {(c.amount ?? 0).toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3.5 text-slate-800 font-sans font-medium text-xs">
+                          {getWhatHappenedText(c)}
+                        </td>
+                        <td className="px-4 py-3.5 font-sans">
+                          {getDecisionText(c)}
+                        </td>
+                        <td className="px-4 py-3.5 font-sans">
+                          {getStatusText(c)}
+                        </td>
+                        <td className="px-4 py-3.5 font-mono text-slate-400 text-xs">
+                          {c.retry_count} / 2
+                        </td>
+                        <td className="px-4 py-3.5 text-right">
+                          <Link
+                            href={`/cases/${c.id}`}
+                            className="inline-flex items-center gap-1 text-xs font-mono text-blue-600 hover:text-blue-800 hover:underline transition"
+                          >
+                            Inspect Audit <ArrowRight className="w-3 h-3" />
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })
               )}
             </tbody>
           </table>

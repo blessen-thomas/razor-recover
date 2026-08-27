@@ -20,6 +20,15 @@ export interface AIInvestigationResult {
   riskFactors: string[];
 }
 
+let genAIClient: GoogleGenerativeAI | null = null;
+
+function getGenAI(apiKey: string): GoogleGenerativeAI {
+  if (!genAIClient) {
+    genAIClient = new GoogleGenerativeAI(apiKey);
+  }
+  return genAIClient;
+}
+
 export async function investigatePaymentCase(
   paymentCase: PaymentCaseRecord,
   events: PaymentEventRecord[]
@@ -38,7 +47,7 @@ export async function investigatePaymentCase(
   // Check if real Gemini key is available
   if (env.GEMINI_API_KEY && !env.GEMINI_API_KEY.includes("Mock")) {
     try {
-      const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
+      const genAI = getGenAI(env.GEMINI_API_KEY);
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
       const prompt = `You are RazorRecover's AI Payment Recovery Investigator.
