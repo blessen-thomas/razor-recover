@@ -98,7 +98,10 @@ export async function POST(req: NextRequest) {
         outcome: "RECOVERY_LINK_GENERATED_SUCCESSFULLY",
       });
 
-      return NextResponse.json({ success: true, caseId: paymentCase.id, scenario: "happy" });
+      const allCases = Array.from(memoryStore.cases.values()).sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      return NextResponse.json({ success: true, caseId: paymentCase.id, scenario: "happy", cases: allCases });
     }
 
     if (scenario === "unsafe") {
@@ -208,7 +211,10 @@ export async function POST(req: NextRequest) {
         outcome: "SAFETY_HALT_ENFORCED_ACTION_BLOCKED",
       });
 
-      return NextResponse.json({ success: true, caseId: paymentCase.id, scenario: "unsafe" });
+      const allCases = Array.from(memoryStore.cases.values()).sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      return NextResponse.json({ success: true, caseId: paymentCase.id, scenario: "unsafe", cases: allCases });
     }
 
     if (scenario === "reconcile") {
@@ -277,7 +283,10 @@ export async function POST(req: NextRequest) {
         outcome: "PAUSED_AWAITING_OPERATOR_RECONCILIATION",
       });
 
-      return NextResponse.json({ success: true, caseId: paymentCase.id, scenario: "reconcile" });
+      const allCases = Array.from(memoryStore.cases.values()).sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      return NextResponse.json({ success: true, caseId: paymentCase.id, scenario: "reconcile", cases: allCases });
     }
 
     return NextResponse.json({ error: "INVALID_SCENARIO" }, { status: 400 });
