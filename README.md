@@ -4,6 +4,14 @@ RazorRecover is a safety-aware payment recovery system built for the Razorpay ec
 
 ---
 
+## 🚀 Live Demo
+
+[Try RazorRecover →](https://razor-recover.vercel.app)
+
+*Note: This is a live demonstration environment featuring interactive test scenarios (Autonomous Recovery, Safety Halt, and Stale Reconciliation) using simulated payment recovery flows and test mode gateway payloads.*
+
+---
+
 ## Problem
 
 Payment failures in e-commerce and fintech lead to lost revenue, customer churn, and operational overhead. However, standard automated retry systems suffer from critical safety risks:
@@ -95,12 +103,6 @@ RazorRecover never relies solely on AI recommendations or raw webhook events to 
 - **SDKs**: `@google/generative-ai`, `razorpay`
 - **Testing**: Vitest, `tsx`
 - **Deployment**: Vercel
-
----
-
-## Live Demo
-
-- **Vercel Production Deployment**: [https://razor-recover.vercel.app](https://razor-recover.vercel.app)
 
 ---
 
@@ -203,7 +205,6 @@ razor-recover/
 │       ├── integration/            # End-to-End Pipeline Tests
 │       └── unit/                   # Policy & Evaluator Unit Tests
 ├── scripts/                        # CLI Seed Scripts
-├── specs/                          # Design Artifacts & Specifications
 ├── vitest.config.ts                # Vitest Configuration
 ├── tailwind.config.ts              # Tailwind CSS Configuration
 └── package.json                    # Dependencies & Scripts
