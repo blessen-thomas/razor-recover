@@ -29,6 +29,9 @@ export function validateWebhookSignature(body: string, signature: string, secret
       .digest("hex");
     
     // Constant time comparison to prevent timing attacks
+    if (expectedSignature.length !== signature.length) {
+      return false;
+    }
     return crypto.timingSafeEqual(Buffer.from(expectedSignature), Buffer.from(signature));
   } catch (err) {
     console.error("Signature validation error:", err);

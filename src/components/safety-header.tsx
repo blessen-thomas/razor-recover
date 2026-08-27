@@ -1,34 +1,32 @@
 import React from "react";
 import Link from "next/link";
-import { ShieldCheck, ShieldAlert, AlertTriangle, RefreshCw } from "lucide-react";
 
 export default function SafetyHeader() {
   return (
-    <header className="bg-slate-800 border-b border-slate-700 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
+      <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 h-13 flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <Link href="/cases" className="flex items-center space-x-2">
-            <div className="bg-blue-600 p-2 rounded-lg text-white font-bold text-lg">
+          <Link href="/cases" className="flex items-center space-x-2.5 group">
+            <div className="bg-blue-600 text-white font-mono font-bold text-[11px] px-1.5 py-0.5 rounded-sm tracking-wider">
               RR
             </div>
-            <div>
-              <h1 className="text-lg font-bold text-white leading-none">RazorRecover</h1>
-              <span className="text-xs text-slate-400 font-medium">Safe Autonomous Payment Recovery</span>
+            <div className="flex items-baseline space-x-2">
+              <span className="text-sm font-semibold text-slate-900 tracking-tight">RazorRecover</span>
+              <span className="text-slate-300 text-xs">/</span>
+              <span className="text-xs text-slate-500 font-mono">Payment Recovery Console</span>
             </div>
           </Link>
         </div>
 
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-full text-xs font-semibold">
-            <span className="flex h-2 w-2 relative mr-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <span className="text-emerald-400">System Safety Engine: ACTIVE</span>
+        <div className="flex items-center space-x-3">
+          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-sm text-xs font-mono">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+            <span className="text-slate-500">Safety Engine:</span>
+            <span className="text-emerald-700 font-semibold">ACTIVE</span>
           </div>
 
-          <div className="flex items-center space-x-2 text-xs text-slate-400">
-            <span className="bg-slate-700 px-2 py-1 rounded">Razorpay Test Mode</span>
+          <div className="flex items-center bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-sm text-xs font-mono text-slate-600">
+            <span>Razorpay Test Mode</span>
           </div>
         </div>
       </div>

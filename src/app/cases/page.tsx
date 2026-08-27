@@ -1,12 +1,15 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { ShieldCheck, AlertOctagon, RefreshCw, Clock, ArrowRight } from "lucide-react";
+import { RefreshCw, ArrowRight, ChevronDown } from "lucide-react";
 
 export default function CasesPage() {
   const [cases, setCases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [seeding, setSeeding] = useState<string | null>(null);
+  const [testMenuOpen, setTestMenuOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const fetchCases = async () => {
     try {
@@ -21,98 +24,284 @@ export default function CasesPage() {
     }
   };
 
+  const handleSeed = async (scenario: "happy" | "unsafe" | "reconcile") => {
+    try {
+      setSeeding(scenario);
+      setTestMenuOpen(false);
+      await fetch("/api/seed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scenario }),
+      });
+      await fetchCases();
+    } catch (err) {
+      console.error("Seed error:", err);
+    } finally {
+      setSeeding(null);
+    }
+  };
+
   useEffect(() => {
     fetchCases();
   }, []);
 
-  const getSafetyStateBadge = (state: string) => {
-    switch (state) {
-      case "ACTIVE":
-        return <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1"><ShieldCheck className="w-3.5 h-3.5" /> ACTIVE</span>;
-      case "BLOCKED":
-        return <span className="bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1"><AlertOctagon className="w-3.5 h-3.5" /> BLOCKED</span>;
-      case "ESCALATED":
-        return <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1"><AlertOctagon className="w-3.5 h-3.5" /> ESCALATED</span>;
-      case "AWAITING_RECONCILIATION":
-        return <span className="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> AWAITING RECONCILIATION</span>;
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setTestMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Compute operational summary metrics from actual cases
+  const totalCases = cases.length;
+  const revenueAtRisk = cases.reduce((sum, c) => sum + (c.amount || 0), 0);
+  const recoveryInProgress = cases
+    .filter((c) => c.current_status === "RECOVERY_INITIATED" || c.current_status === "RECOVERED")
+    .reduce((sum, c) => sum + (c.amount || 0), 0);
+  const casesNeedingAttention = cases.filter(
+    (c) => c.safety_state === "ESCALATED" || c.safety_state === "BLOCKED" || c.safety_state === "AWAITING_RECONCILIATION"
+  ).length;
+  const autonomousActionRate = totalCases > 0
+    ? Math.round((cases.filter((c) => c.current_status === "RECOVERY_INITIATED" || c.current_status === "RECOVERED").length / totalCases) * 100)
+    : 0;
+
+  const formatCurrency = (val: number) => {
+    return `₹${val.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  const getWhatHappenedText = (c: any) => {
+    switch (c.integrity_state) {
+      case "TRUSTED":
+        return c.error_description || "Temporary payment failure";
+      case "CONTRADICTORY":
+        return "Payment status conflict";
+      case "STALE":
+        return "Outdated payment information";
+      case "DUPLICATE":
+        return "Duplicate event received";
+      case "OUT_OF_ORDER":
+        return "Out-of-order event sequence";
+      case "INCOMPLETE":
+        return "Incomplete event payload";
       default:
-        return <span className="bg-slate-700 text-slate-300 px-2.5 py-1 rounded-md text-xs font-semibold">{state}</span>;
+        return c.integrity_state;
+    }
+  };
+
+  const getDecisionText = (c: any) => {
+    if (c.safety_state === "AWAITING_RECONCILIATION" || c.integrity_state === "STALE") {
+      return (
+        <span className="text-blue-700 font-semibold bg-blue-50 px-2 py-0.5 rounded-sm border border-blue-200 text-xs">
+          Reconcile
+        </span>
+      );
+    }
+    if (c.safety_state === "ESCALATED" || c.safety_state === "BLOCKED" || c.integrity_state === "CONTRADICTORY") {
+      return (
+        <span className="text-rose-700 font-semibold bg-rose-50 px-2 py-0.5 rounded-sm border border-rose-200 text-xs">
+          Stop
+        </span>
+      );
+    }
+    return (
+      <span className="text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-sm border border-emerald-200 text-xs">
+        Recover
+      </span>
+    );
+  };
+
+  const getStatusText = (c: any) => {
+    switch (c.current_status) {
+      case "RECOVERY_INITIATED":
+        return <span className="text-emerald-700 font-semibold">Recovery in progress</span>;
+      case "RECOVERED":
+        return <span className="text-emerald-700 font-semibold">Recovered</span>;
+      case "ESCALATED":
+        return <span className="text-rose-700 font-semibold">Needs review</span>;
+      case "FAILED":
+        return <span className="text-rose-700 font-semibold">Failed</span>;
+      case "DETECTED":
+        if (c.safety_state === "AWAITING_RECONCILIATION") {
+          return <span className="text-blue-700 font-semibold">Checking payment status</span>;
+        }
+        return <span className="text-slate-700 font-semibold">Detected</span>;
+      default:
+        return <span className="text-slate-700 font-semibold">{c.current_status}</span>;
     }
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Top Header Controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-200">
         <div>
-          <h2 className="text-2xl font-bold text-slate-100">Autonomous Payment Recovery Cases</h2>
-          <p className="text-sm text-slate-400">Deterministic safety engine status & recovery audit history</p>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Payment Recovery Operations</h1>
+          <p className="text-xs text-slate-500 font-sans mt-0.5">
+            Automatically recover safe payment failures while preventing risky retries.
+          </p>
         </div>
-        <button
-          onClick={fetchCases}
-          className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-3.5 py-2 rounded-lg text-sm font-medium transition"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Refresh Cases
-        </button>
+
+        <div className="flex items-center space-x-2.5">
+          {/* Test / Demo Mode Compact Launcher */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setTestMenuOpen(!testMenuOpen)}
+              disabled={seeding !== null}
+              className="flex items-center gap-1.5 bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 px-3 py-1.5 rounded-sm text-xs font-mono transition disabled:opacity-50 shadow-sm"
+            >
+              {seeding ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-600" />
+              ) : (
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+              )}
+              <span>Test Scenarios</span>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-500 ml-0.5" />
+            </button>
+
+            {testMenuOpen && (
+              <div className="absolute right-0 mt-1.5 w-64 bg-white border border-slate-200 rounded-sm shadow-xl z-50 py-1 text-xs">
+                <div className="px-3 py-1.5 text-[10px] font-mono text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                  Select Demo Scenario
+                </div>
+                <button
+                  onClick={() => handleSeed("happy")}
+                  className="w-full text-left px-3 py-2 hover:bg-slate-50 text-slate-800 transition flex items-center justify-between font-mono"
+                >
+                  <div>
+                    <div className="font-semibold text-emerald-700">1. Autonomous Recovery</div>
+                    <div className="text-[11px] text-slate-500 font-sans">Valid failed payload & recovery link</div>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => handleSeed("unsafe")}
+                  className="w-full text-left px-3 py-2 hover:bg-slate-50 text-slate-800 transition flex items-center justify-between border-t border-slate-100 font-mono"
+                >
+                  <div>
+                    <div className="font-semibold text-rose-700">2. Safety Halt (Contradiction)</div>
+                    <div className="text-[11px] text-slate-500 font-sans">Failed event after captured state</div>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => handleSeed("reconcile")}
+                  className="w-full text-left px-3 py-2 hover:bg-slate-50 text-slate-800 transition flex items-center justify-between border-t border-slate-100 font-mono"
+                >
+                  <div>
+                    <div className="font-semibold text-blue-700">3. Stale Reconciliation</div>
+                    <div className="text-[11px] text-slate-500 font-sans">Stale webhook payload & API sync</div>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={fetchCases}
+            className="flex items-center gap-1.5 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 px-3 py-1.5 rounded-sm text-xs font-mono transition shadow-sm"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+            <span>Refresh</span>
+          </button>
+        </div>
       </div>
 
-      <div className="bg-slate-800/80 border border-slate-700/80 rounded-xl overflow-hidden shadow-xl">
+      {/* Operational Summary Metrics Panel */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="bg-white border-l-2 border-l-slate-900 border-t border-r border-b border-slate-200 p-4 rounded-sm space-y-1 shadow-sm">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-slate-500 font-semibold">Revenue at Risk</div>
+          <div className="text-2xl font-bold font-mono text-slate-900">{formatCurrency(revenueAtRisk)}</div>
+          <div className="text-[11px] text-slate-500 font-sans">Failed payments currently requiring recovery or investigation.</div>
+        </div>
+
+        <div className="bg-white border-l-2 border-l-emerald-600 border-t border-r border-b border-slate-200 p-4 rounded-sm space-y-1 shadow-sm">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-slate-500 font-semibold">Recovery in Progress</div>
+          <div className="text-2xl font-bold font-mono text-emerald-700">{formatCurrency(recoveryInProgress)}</div>
+          <div className="text-[11px] text-slate-500 font-sans">Payments for which autonomous recovery action started.</div>
+        </div>
+
+        <div className="bg-white border-l-2 border-l-amber-600 border-t border-r border-b border-slate-200 p-4 rounded-sm space-y-1 shadow-sm">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-slate-500 font-semibold">Attention Required</div>
+          <div className={`text-2xl font-bold font-mono ${casesNeedingAttention > 0 ? "text-amber-700" : "text-slate-800"}`}>
+            {casesNeedingAttention}
+          </div>
+          <div className="text-[11px] text-slate-500 font-sans">Cases blocked, escalated, or waiting for reconciliation.</div>
+        </div>
+
+        <div className="bg-white border-l-2 border-l-slate-400 border-t border-r border-b border-slate-200 p-4 rounded-sm space-y-1 shadow-sm">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-slate-500 font-semibold">Autonomous Action Rate</div>
+          <div className="text-2xl font-bold font-mono text-slate-800">{autonomousActionRate}%</div>
+          <div className="text-[11px] text-slate-500 font-sans">Cases allowed to take recovery action automatically.</div>
+        </div>
+      </div>
+
+      {/* Primary Operations Cases Table */}
+      <div className="bg-white border border-slate-200 rounded-sm overflow-hidden shadow-sm">
+        <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
+          <div className="text-xs font-mono uppercase tracking-wider text-slate-700 font-semibold">
+            Active Recovery Cases
+          </div>
+          <div className="text-xs font-mono text-slate-500">
+            Showing {cases.length} records
+          </div>
+        </div>
+
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-300">
-            <thead className="bg-slate-900/60 text-slate-400 uppercase text-xs font-semibold border-b border-slate-700/80">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-100 text-slate-600 uppercase font-mono text-[11px] border-b border-slate-200">
               <tr>
-                <th className="px-6 py-4">Case / Payment ID</th>
-                <th className="px-6 py-4">Amount</th>
-                <th className="px-6 py-4">Integrity State</th>
-                <th className="px-6 py-4">Safety State</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4">Retries</th>
-                <th className="px-6 py-4 text-right">Audit Trail</th>
+                <th className="px-4 py-3 font-semibold text-slate-500">Payment</th>
+                <th className="px-4 py-3 font-semibold text-slate-900">Amount</th>
+                <th className="px-4 py-3 font-semibold text-slate-900">What happened</th>
+                <th className="px-4 py-3 font-semibold text-slate-900">Decision</th>
+                <th className="px-4 py-3 font-semibold text-slate-900">Status</th>
+                <th className="px-4 py-3 font-semibold text-slate-400">Retries</th>
+                <th className="px-4 py-3 font-semibold text-right text-slate-400">Audit</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-700/50">
+            <tbody className="divide-y divide-slate-100">
               {cases.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-slate-500">
-                    No active recovery cases. Use CLI seeders or trigger webhooks to test.
+                  <td colSpan={7} className="text-center py-12 text-slate-500 font-sans text-xs">
+                    No payment recovery cases registered. RazorRecover monitors failed payments, evaluates recovery safety, and acts automatically when policy allows. Select "Test Scenarios" above or send webhooks to test.
                   </td>
                 </tr>
               ) : (
-                cases.map((c) => (
-                  <tr key={c.id} className="hover:bg-slate-700/30 transition">
-                    <td className="px-6 py-4 font-mono font-medium text-slate-200">
-                      {c.razorpay_payment_id}
-                    </td>
-                    <td className="px-6 py-4 font-semibold text-slate-100">
-                      {c.currency} {c.amount.toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4 font-mono text-xs">
-                      <span className={`px-2 py-1 rounded font-semibold ${
-                        c.integrity_state === "TRUSTED" ? "bg-emerald-950 text-emerald-400 border border-emerald-800" : "bg-rose-950 text-rose-400 border border-rose-800"
-                      }`}>
-                        {c.integrity_state}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      {getSafetyStateBadge(c.safety_state)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="font-semibold text-xs uppercase tracking-wider text-slate-300">
-                        {c.current_status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 font-mono text-xs text-slate-400">
-                      {c.retry_count} / 2
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <Link
-                        href={`/cases/${c.id}`}
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 px-3 py-1.5 rounded-md transition"
-                      >
-                        Inspect Audit <ArrowRight className="w-3.5 h-3.5" />
-                      </Link>
-                    </td>
-                  </tr>
-                ))
+                cases.map((c) => {
+                  return (
+                    <tr key={c.id} className="hover:bg-slate-50/80 transition">
+                      <td className="px-4 py-3.5 font-mono text-slate-500 text-xs">
+                        {c.razorpay_payment_id}
+                      </td>
+                      <td className="px-4 py-3.5 font-mono font-bold text-slate-900 text-sm">
+                        {c.currency || "INR"} {(c.amount ?? 0).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3.5 text-slate-800 font-sans font-medium text-xs">
+                        {getWhatHappenedText(c)}
+                      </td>
+                      <td className="px-4 py-3.5 font-sans">
+                        {getDecisionText(c)}
+                      </td>
+                      <td className="px-4 py-3.5 font-sans">
+                        {getStatusText(c)}
+                      </td>
+                      <td className="px-4 py-3.5 font-mono text-slate-400 text-xs">
+                        {c.retry_count} / 2
+                      </td>
+                      <td className="px-4 py-3.5 text-right">
+                        <Link
+                          href={`/cases/${c.id}`}
+                          className="inline-flex items-center gap-1 text-xs font-mono text-blue-600 hover:text-blue-800 hover:underline transition"
+                        >
+                          Inspect Audit <ArrowRight className="w-3 h-3" />
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

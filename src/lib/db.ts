@@ -96,7 +96,13 @@ class MemoryStore {
   }
 }
 
-export const memoryStore = new MemoryStore();
+const globalForDb = globalThis as unknown as { memoryStore?: MemoryStore };
+
+export const memoryStore = globalForDb.memoryStore ?? new MemoryStore();
+
+if (process.env.NODE_ENV !== "production") {
+  globalForDb.memoryStore = memoryStore;
+}
 
 let supabaseClient: SupabaseClient | null = null;
 

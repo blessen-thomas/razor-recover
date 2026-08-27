@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
         error_code: paymentEntity.error_code || null,
         error_description: paymentEntity.error_description || null,
         current_status: eventType === "payment.captured" ? "RECOVERED" : "DETECTED",
-        safety_state: integrityResult.integrityState === "TRUSTED" ? "ACTIVE" : "ESCALATED",
+        safety_state: integrityResult.integrityState === "TRUSTED" ? "ACTIVE" : integrityResult.integrityState === "STALE" ? "AWAITING_RECONCILIATION" : "ESCALATED",
         integrity_state: integrityResult.integrityState,
         retry_count: 0,
         created_at: new Date().toISOString(),
@@ -65,7 +65,9 @@ export async function POST(req: NextRequest) {
       memoryStore.cases.set(paymentCase.id, paymentCase);
     } else {
       paymentCase.integrity_state = integrityResult.integrityState;
-      if (integrityResult.integrityState !== "TRUSTED") {
+      if (integrityResult.integrityState === "STALE") {
+        paymentCase.safety_state = "AWAITING_RECONCILIATION";
+      } else if (integrityResult.integrityState !== "TRUSTED") {
         paymentCase.safety_state = "ESCALATED";
       }
       memoryStore.cases.set(paymentCase.id, paymentCase);
