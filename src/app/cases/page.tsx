@@ -2,13 +2,15 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { RefreshCw, ArrowRight, ChevronDown } from "lucide-react";
+import { RefreshCw, ArrowRight, ChevronDown, MessageSquare } from "lucide-react";
+import AssistantDrawer from "@/components/assistant-drawer";
 
 export default function CasesPage() {
   const [cases, setCases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState<string | null>(null);
   const [testMenuOpen, setTestMenuOpen] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const fetchCases = async () => {
@@ -247,6 +249,14 @@ export default function CasesPage() {
           </div>
 
           <button
+            onClick={() => setAssistantOpen(true)}
+            className="flex items-center gap-1.5 bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 px-3 py-1.5 rounded-sm text-xs font-mono transition shadow-sm"
+          >
+            <MessageSquare className="w-3.5 h-3.5 text-blue-600" />
+            <span>Ask RazorRecover</span>
+          </button>
+
+          <button
             onClick={fetchCases}
             className="flex items-center gap-1.5 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 px-3 py-1.5 rounded-sm text-xs font-mono transition shadow-sm"
           >
@@ -381,6 +391,11 @@ export default function CasesPage() {
           </table>
         </div>
       </div>
+
+      <AssistantDrawer
+        isOpen={assistantOpen}
+        onClose={() => setAssistantOpen(false)}
+      />
     </div>
   );
 }
